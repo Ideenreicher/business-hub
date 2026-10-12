@@ -1,0 +1,61 @@
+---
+import Layout from '../layouts/Layout.astro';
+
+const features = [
+  {
+    icon: '⚡',
+    title: 'Zero framework',
+    text: 'Plain HTML and CSS, served fast by Astro. Nothing to learn before you ship.',
+  },
+  {
+    icon: '🎨',
+    title: 'Class-based styling',
+    text: 'Every element has one semantic class with one CSS rule — clean, predictable, editable.',
+  },
+  {
+    icon: '🧩',
+    title: 'Visual editing ready',
+    text: 'Built to the convention the in-app visual editor expects, so you can style by clicking.',
+  },
+];
+---
+
+<Layout>
+  <section class="hero">
+    <span class="hero-eyebrow">HTML + CSS starter</span>
+    <h1 class="hero-title">Build a fast site, style it by clicking.</h1>
+    <p class="hero-subtitle">
+      A no-framework Astro starter with plain, class-based CSS — the perfect canvas for editing
+      styles visually, no Tailwind required.
+    </p>
+    <div class="hero-actions">
+      <a class="btn-primary" href="/about">Get started</a>
+      <a class="btn-secondary" href="https://astro.build">Read the docs</a>
+    </div>
+  </section>
+
+  <section class="features">
+    <h2 class="section-title">Everything you need, nothing you don't</h2>
+    <div class="feature-grid">
+      {
+        features.map((f) => (
+          <article class="feature-card">
+            <div class="feature-icon">{f.icon}</div>
+            <h3 class="feature-title">{f.title}</h3>
+            <p class="feature-text">{f.text}</p>
+          </article>
+        ))
+      }
+    </div>
+  </section>
+
+  <section class="cta">
+    <div class="cta-inner">
+      <h2 class="cta-title">Ready to make it yours?</h2>
+      <p class="cta-text">
+        Click any element in the preview to edit its CSS, or open the code and make it your own.
+      </p>
+      <a class="cta-button" href="/about">Start editing</a>
+    </div>
+  </section>
+</Layout>
