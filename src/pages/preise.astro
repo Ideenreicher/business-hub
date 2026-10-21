@@ -1,0 +1,14 @@
+---
+// Preise: Unterseite mit dem Preis-Konfigurator (src/landingpage/preise-sektion.html).
+import landingpage from '../landingpage/index.html?raw';
+import sektion from '../landingpage/preise-sektion.html?raw';
+import { baueSeite } from '../landingpage/seite';
+
+const seite = baueSeite(landingpage, sektion, {
+  title: 'Preise – CTK Business Hub',
+  description:
+    'Preise des CTK Business Hub: Benutzerlizenzen nach Bedarf, Module als feste Monatspauschale – live berechnet.',
+});
+---
+
+<Fragment set:html={seite} />

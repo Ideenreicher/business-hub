@@ -1,44 +1,15 @@
 ---
-import Layout from '../layouts/Layout.astro';
+// Über uns: Unterseite im Design der Landingpage (src/landingpage/about-sektion.html).
+// Inhalte stammen von ctk-gmbh.de (Unternehmen, 30 Jahre CTK, Business-Software).
+import landingpage from '../landingpage/index.html?raw';
+import sektion from '../landingpage/about-sektion.html?raw';
+import { baueSeite } from '../landingpage/seite';
+
+const seite = baueSeite(landingpage, sektion, {
+  title: 'Über uns – CTK Business Hub',
+  description:
+    'Der CTK Business Hub ist ein Produkt der CTK GmbH aus Greding: IT-Dienstleister seit 1993, über 300 Kunden, ISO-27001-zertifiziert.',
+});
 ---
 
-<Layout title="About — Northwind">
-  <section class="hero">
-    <span class="hero-eyebrow">About</span>
-    <h1 class="hero-title">A starter that stays out of your way.</h1>
-    <p class="hero-subtitle">
-      Northwind is plain HTML and CSS on top of Astro. No build-time magic, no utility classes to
-      memorize — just semantic markup and a single stylesheet you fully control.
-    </p>
-    <div class="hero-actions">
-      <a class="btn-primary" href="/">Back home</a>
-    </div>
-  </section>
-
-  <section class="features">
-    <h2 class="section-title">How it's organized</h2>
-    <div class="feature-grid">
-      <article class="feature-card">
-        <div class="feature-icon">📄</div>
-        <h3 class="feature-title">Pages</h3>
-        <p class="feature-text">
-          Each route is a file in <code>src/pages</code>. Plain HTML in <code>.astro</code> files.
-        </p>
-      </article>
-      <article class="feature-card">
-        <div class="feature-icon">🧱</div>
-        <h3 class="feature-title">Components</h3>
-        <p class="feature-text">
-          Reusable pieces like the header and footer live in <code>src/components</code>.
-        </p>
-      </article>
-      <article class="feature-card">
-        <div class="feature-icon">🎨</div>
-        <h3 class="feature-title">Styles</h3>
-        <p class="feature-text">
-          One stylesheet, <code>src/styles/main.css</code> — one semantic class per rule.
-        </p>
-      </article>
-    </div>
-  </section>
-</Layout>
+<Fragment set:html={seite} />

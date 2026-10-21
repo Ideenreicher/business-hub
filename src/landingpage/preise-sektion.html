@@ -1,0 +1,415 @@
+<style>
+    /* ── Preise: Konfigurator ──────────────────────────────────────────────
+       Modulkarten wie im Baukasten, hier als Schalter. Die Zahlen stehen
+       in der Script-Sektion am Seitenende (PREISE). */
+    .pr-grid { display: grid; grid-template-columns: minmax(0, 1fr) 380px; gap: 24px; align-items: start; }
+    @media (max-width: 980px) { .pr-grid { grid-template-columns: minmax(0, 1fr); } .pr-sum { position: static !important; } }
+    .pr-mod {
+      appearance: none; font: inherit; text-align: left; width: 100%;
+      display: flex; flex-direction: column; gap: 16px; padding: 24px 22px;
+      border-radius: 16px; background: #ffffff; border: 1px solid var(--m-border); color: inherit;
+    }
+    .pr-mod .ic-check { display: none; }
+    .pr-mod.is-on { background: linear-gradient(180deg, var(--m-soft) 0%, #ffffff 70%); border-color: var(--m); box-shadow: 0 0 0 1px var(--m); }
+    .pr-mod.is-on .mod-plus { background: var(--m) !important; border-color: var(--m) !important; border-style: solid !important; color: #ffffff !important; }
+    .pr-mod.is-on .ic-plus { display: none; }
+    .pr-mod.is-on .ic-check { display: block; }
+    .pr-mod[data-fixed] { cursor: default; }
+    .pr-mod[data-fixed]:hover { transform: none; box-shadow: 0 0 0 1px var(--m); }
+    .pr-mod:focus-visible { outline: 3px solid #96c11f; outline-offset: 3px; border-radius: 16px; }
+
+    .pr-range {
+      -webkit-appearance: none; appearance: none; width: 100%; height: 32px; margin: 0;
+      background: transparent; cursor: pointer;
+    }
+    .pr-range::-webkit-slider-runnable-track {
+      height: 8px; border-radius: 999px;
+      background: linear-gradient(90deg, var(--brand) 0, var(--brand) var(--p, 0%), #dbe5ee var(--p, 0%), #dbe5ee 100%);
+    }
+    .pr-range::-moz-range-track { height: 8px; border-radius: 999px; background: #dbe5ee; }
+    .pr-range::-moz-range-progress { height: 8px; border-radius: 999px; background: var(--brand); }
+    .pr-range::-webkit-slider-thumb {
+      -webkit-appearance: none; appearance: none; width: 28px; height: 28px; margin-top: -10px;
+      border-radius: 999px; background: #ffffff; border: 3px solid var(--brand);
+      box-shadow: 0 4px 10px -2px rgba(6, 48, 79, 0.35); transition: transform 0.15s ease;
+    }
+    .pr-range::-moz-range-thumb {
+      width: 22px; height: 22px; border-radius: 999px; background: #ffffff; border: 3px solid var(--brand);
+      box-shadow: 0 4px 10px -2px rgba(6, 48, 79, 0.35);
+    }
+    .pr-range:hover::-webkit-slider-thumb { transform: scale(1.08); }
+    .pr-range:focus-visible { outline: 3px solid #96c11f; outline-offset: 4px; border-radius: 999px; }
+    .pr-range.pr-range-sm { height: 28px; }
+    .pr-count {
+      width: 5ch; padding: 0; border: 0; border-bottom: 2px dashed #cfcfcf; background: transparent;
+      font: inherit; font-size: 44px; font-weight: 700; letter-spacing: -0.03em; line-height: 1.1;
+      color: var(--fg); text-align: right; -moz-appearance: textfield;
+    }
+    .pr-count::-webkit-outer-spin-button, .pr-count::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+    .pr-count:focus { outline: none; border-bottom-color: var(--brand); }
+    .pr-count.sm { font-size: 22px; letter-spacing: -0.02em; width: 4ch; }
+    .pr-tier { flex: 1 1 0; padding: 10px 8px; border-radius: 10px; text-align: center; background: var(--surface); border: 1px solid var(--border); transition: background-color 0.18s ease, border-color 0.18s ease; }
+    .pr-tier.is-on { background: var(--brand-soft); border-color: var(--brand); }
+    #preise [hidden] { display: none !important; }
+    .pr-mode {
+      appearance: none; font: inherit; text-align: left; cursor: pointer; color: inherit;
+      display: flex; align-items: flex-start; gap: 14px; padding: 18px 20px; border-radius: 16px;
+      background: #ffffff; border: 1px solid var(--border); transition: border-color 0.18s ease, box-shadow 0.18s ease, background-color 0.18s ease;
+    }
+    .pr-mode:hover { border-color: #bae0ff; }
+    .pr-mode[aria-checked="true"] { border-color: var(--brand); background: var(--brand-soft); box-shadow: 0 0 0 1px var(--brand); }
+    .pr-mode .pr-radio { width: 20px; height: 20px; border-radius: 999px; border: 2px solid #b7c4d1; background: #ffffff; flex-shrink: 0; margin-top: 2px; display: inline-flex; align-items: center; justify-content: center; }
+    .pr-mode[aria-checked="true"] .pr-radio { border-color: var(--brand); }
+    .pr-mode[aria-checked="true"] .pr-radio::after { content: ""; width: 10px; height: 10px; border-radius: 999px; background: var(--brand); }
+    .pr-mode:focus-visible { outline: 3px solid #96c11f; outline-offset: 3px; border-radius: 16px; }
+    .pr-line { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; font-size: 14px; line-height: 1.4; }
+    @media (prefers-reduced-motion: reduce) {
+      .pr-range::-webkit-slider-thumb, .pr-tier, .pr-mode { transition: none; }
+    }
+</style>
+
+  <!-- ── PREISE ──────────────────────────────────────────── -->
+  <section id="preise" style="width: 100%; background: var(--band); border-top: 1px solid var(--border); padding: clamp(52px, 6.5vw, 88px) clamp(20px, 4vw, 32px);">
+    <div style="max-width: 1200px; margin: 0 auto; display: flex; flex-direction: column; gap: 48px;">
+
+      <div style="display: flex; flex-direction: column; align-items: center; gap: 18px; max-width: 720px; margin: 0 auto; text-align: center;">
+        <span style="font-size: 12px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--brand);">Preise</span>
+        <h1 style="font-size: clamp(30px, 4.4vw, 46px); font-weight: 700; line-height: 1.1; letter-spacing: -0.025em; color: var(--fg); text-wrap: balance;">Transparent lizenziert. Live berechnet.</h1>
+        <p style="font-size: 18px; line-height: 1.6; color: var(--muted); text-wrap: pretty;">Entscheiden Sie, ob Sie den kompletten Business Hub oder nur die Zeiterfassung nutzen möchten. Stellen Sie Ihre Größe ein, wählen Sie Ihre Module – den Preis sehen Sie sofort.</p>
+      </div>
+
+      <div class="pr-grid">
+
+        <div style="display: flex; flex-direction: column; gap: 24px; min-width: 0;">
+
+          <div style="display: flex; flex-direction: column; gap: 12px;">
+            <h3 id="pr-mode-title" style="font-size: 18px; font-weight: 700; color: var(--fg);">Was möchten Sie nutzen?</h3>
+            <div role="radiogroup" aria-labelledby="pr-mode-title" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr)); gap: 12px;">
+            <button type="button" role="radio" class="pr-mode" data-pr-mode="voll" aria-checked="true">
+              <span class="pr-radio" aria-hidden="true"></span>
+              <span style="display: flex; flex-direction: column; gap: 4px; min-width: 0;">
+                <span style="display: flex; align-items: center; gap: 8px; font-size: 16px; font-weight: 700; color: var(--fg);"><span style="display: inline-flex; color: var(--brand);"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="7" height="9" x="3" y="3" rx="1"></rect><rect width="7" height="5" x="14" y="3" rx="1"></rect><rect width="7" height="9" x="14" y="12" rx="1"></rect><rect width="7" height="5" x="3" y="16" rx="1"></rect></svg></span>Business Hub</span>
+                <span style="font-size: 13px; line-height: 1.5; color: var(--muted);">Grundlizenz inklusive Ticketing – mit frei wählbaren Modulen.</span>
+                <span style="font-size: 14px; font-weight: 700; color: var(--brand);">ab 15,00 € je User / Monat</span>
+              </span>
+            </button>
+            <button type="button" role="radio" class="pr-mode" data-pr-mode="zeit" aria-checked="false">
+              <span class="pr-radio" aria-hidden="true"></span>
+              <span style="display: flex; flex-direction: column; gap: 4px; min-width: 0;">
+                <span style="display: flex; align-items: center; gap: 8px; font-size: 16px; font-weight: 700; color: var(--fg);"><span style="display: inline-flex; color: var(--brand);"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><path d="M12 6v6l4 2"></path></svg></span>Nur Zeiterfassung</span>
+                <span style="font-size: 13px; line-height: 1.5; color: var(--muted);">Zeiterfassung allein, ohne Grundlizenz und ohne weitere Module.</span>
+                <span style="font-size: 14px; font-weight: 700; color: var(--brand);">2,50 € je Zeiterfassungsuser / Monat</span>
+              </span>
+            </button>
+            </div>
+          </div>
+
+          <div style="display: flex; flex-direction: column; gap: 22px; padding: clamp(24px, 4vw, 32px); border-radius: 20px; background: #ffffff; border: 1px solid var(--border);">
+            <div style="display: flex; align-items: flex-end; justify-content: space-between; flex-wrap: wrap; gap: 12px 24px;">
+              <div style="display: flex; flex-direction: column; gap: 4px;">
+                <label id="pr-users-label" for="pr-users" style="font-size: 18px; font-weight: 700; color: var(--fg);">Wie viele Mitarbeiter arbeiten im Business Hub?</label>
+                <span id="pr-users-sub" style="font-size: 14px; color: var(--muted);">Grundlizenz je Benutzer – inklusive Modul Ticketing.</span>
+              </div>
+              <div style="display: flex; align-items: baseline; gap: 10px;">
+                <input id="pr-users-num" class="pr-count" type="number" inputmode="numeric" min="1" max="500" value="10" aria-label="Anzahl Benutzer">
+                <span id="pr-users-unit" style="font-size: 15px; font-weight: 700; color: var(--muted);">User</span>
+              </div>
+            </div>
+
+            <input id="pr-users" class="pr-range" type="range" min="1" max="200" step="1" value="10" aria-label="Anzahl Benutzer" aria-describedby="pr-users-hint">
+
+            <div id="pr-tiers" style="display: flex; gap: 8px;">
+              <div class="pr-tier" data-min="1"><div style="font-size: 12px; color: var(--muted);">1–4 User</div><div style="font-size: 15px; font-weight: 700; color: var(--fg);">20,00 €</div></div>
+              <div class="pr-tier" data-min="5"><div style="font-size: 12px; color: var(--muted);">5–9 User</div><div style="font-size: 15px; font-weight: 700; color: var(--fg);">18,00 €</div></div>
+              <div class="pr-tier" data-min="10"><div style="font-size: 12px; color: var(--muted);">10–24 User</div><div style="font-size: 15px; font-weight: 700; color: var(--fg);">16,00 €</div></div>
+              <div class="pr-tier" data-min="25"><div style="font-size: 12px; color: var(--muted);">ab 25 User</div><div style="font-size: 15px; font-weight: 700; color: var(--fg);">15,00 €</div></div>
+            </div>
+            <p id="pr-users-hint" style="font-size: 13px; color: var(--muted);">Preis je User und Monat, gestaffelt nach Anzahl.</p>
+
+            <div id="pr-max-note" hidden role="status" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px 20px; padding: 16px 20px; border-radius: 14px; background: var(--brand-soft); border: 1px solid #bae0ff;">
+              <span style="font-size: 14px; line-height: 1.5; color: var(--fg);"><strong>500 User erreicht.</strong> Für größere Unternehmen erstellen wir Ihnen ein individuelles Angebot.</span>
+              <a class="link-cta" href="https://outlook.office.com/book/TerminbuchungBeratungsgesprch@ctk-gmbh.de/" target="_blank" rel="noopener noreferrer" style="display: inline-flex; align-items: center; gap: 6px; min-height: 44px; font-size: 14px; font-weight: 700;">Individuelles Angebot anfordern<svg class="lu" data-a="nudge" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg></a>
+            </div>
+
+            <div id="pr-zeit-row" hidden style="display: flex; flex-direction: column; gap: 12px; padding-top: 22px; border-top: 1px solid var(--border);">
+              <div style="display: flex; align-items: flex-end; justify-content: space-between; flex-wrap: wrap; gap: 8px 24px;">
+                <div style="display: flex; flex-direction: column; gap: 2px;">
+                  <label for="pr-zeit" style="font-size: 16px; font-weight: 700; color: var(--fg);">Wie viele Nutzer erfassen Zeiten?</label>
+                  <span style="font-size: 13px; color: var(--muted);">2,50 € je Zeiterfassungsuser – unabhängig von der Zahl der Business-Hub-User.</span>
+                </div>
+                <div style="display: flex; align-items: baseline; gap: 8px;">
+                  <input id="pr-zeit-num" class="pr-count sm" type="number" inputmode="numeric" min="1" max="500" value="10" aria-label="Anzahl Zeiterfassungsuser">
+                  <span style="font-size: 14px; font-weight: 700; color: var(--muted);">User</span>
+                </div>
+              </div>
+              <input id="pr-zeit" class="pr-range pr-range-sm" type="range" min="1" max="200" step="1" value="10" aria-label="Anzahl Zeiterfassungsuser">
+            </div>
+          </div>
+
+          <div id="pr-voll" style="display: flex; flex-direction: column; gap: 24px;">
+
+          <div style="display: flex; flex-direction: column; gap: 6px;">
+            <h3 style="font-size: 18px; font-weight: 700; color: var(--fg);">Benutzerlizenz</h3>
+            <p style="font-size: 14px; color: var(--muted);">Ticketing ist in der Grundlizenz enthalten. Die Zeiterfassung buchen Sie je Nutzer dazu.</p>
+          </div>
+
+          <div id="pr-base" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(240px, 100%), 1fr)); gap: 16px;">
+          <button type="button" class="mod-card hov pr-mod is-on" data-mod="ticketing" data-name="Ticketing" data-fixed="1" aria-pressed="true" aria-disabled="true" style="--m: #006cb5; --m-line: #8bc8fa; --m-soft: #eff8ff; --m-border: #dcf0ff;">
+            <span style="display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;">
+              <span style="display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 11px; background: var(--m-soft); color: var(--m); flex-shrink: 0;">
+                <svg class="lu" data-a="pop" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"></path><path d="M13 5v2"></path><path d="M13 17v2"></path><path d="M13 11v2"></path></svg>
+              </span>
+              <span aria-hidden="true" class="mod-plus" style="display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 999px; border: 1px dashed #8bc8fa; background: #ffffff; color: var(--m); flex-shrink: 0;"><svg class="lu ic-plus" data-a="pop" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"></path><path d="M12 5v14"></path></svg><svg class="lu ic-check" data-a="pop" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg></span>
+            </span>
+            <span style="display: flex; flex-direction: column; gap: 6px;">
+              <span style="font-size: 16px; font-weight: 700; color: var(--fg);">Ticketing</span>
+              <span style="font-size: 13px; line-height: 1.55; color: var(--muted);">Support-Vorgänge mit Verlauf, Status und Tätigkeitsbuchung.</span>
+            </span>
+            <span style="align-self: flex-start; margin-top: auto; padding: 3px 10px; border-radius: 999px; background: var(--m-soft); font-size: 12px; font-weight: 700; color: #025a98;">In der Grundlizenz enthalten</span>
+          </button>
+          <button type="button" class="mod-card hov pr-mod" data-mod="zeit" data-name="Zeiterfassung" data-price="user:2.5" aria-pressed="false" style="--m: oklch(0.52 0.13 220); --m-line: oklch(0.80 0.10 220); --m-soft: oklch(0.955 0.038 220); --m-border: oklch(0.91 0.032 220);">
+            <span style="display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;">
+              <span style="display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 11px; background: var(--m-soft); color: var(--m); flex-shrink: 0;">
+                <svg class="lu" data-a="tick" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><path d="M12 6v6l4 2"></path></svg>
+              </span>
+              <span aria-hidden="true" class="mod-plus" style="display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 999px; border: 1px dashed oklch(0.82 0.07 220); background: #ffffff; color: var(--m); flex-shrink: 0;"><svg class="lu ic-plus" data-a="pop" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"></path><path d="M12 5v14"></path></svg><svg class="lu ic-check" data-a="pop" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg></span>
+            </span>
+            <span style="display: flex; flex-direction: column; gap: 6px;">
+              <span style="font-size: 16px; font-weight: 700; color: var(--fg);">Zeiterfassung</span>
+              <span style="font-size: 13px; line-height: 1.55; color: var(--muted);">Zeiterfassung, Arbeitszeitkonto, Urlaub und Krankmeldung.</span>
+            </span>
+            <span style="align-self: flex-start; margin-top: auto; padding: 3px 10px; border-radius: 999px; background: var(--m-soft); font-size: 12px; font-weight: 700; color: oklch(0.46 0.115 220);">2,50 € je Zeiterfassungsuser</span>
+          </button>
+          </div>
+
+          <div style="display: flex; flex-direction: column; gap: 6px;">
+            <h3 style="font-size: 18px; font-weight: 700; color: var(--fg);">Module hinzufügen</h3>
+            <p style="font-size: 14px; color: var(--muted);">Feste Monatspauschale pro Unternehmen – unabhängig von der Anzahl der Benutzer. Klicken zum Hinzufügen oder Abwählen.</p>
+          </div>
+
+          <div id="pr-mods" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(240px, 100%), 1fr)); gap: 16px;">
+          <button type="button" class="mod-card hov pr-mod" data-mod="portal" data-name="Kundenportal fürs Ticketing" data-price="5" aria-pressed="false" style="--m: oklch(0.52 0.13 335); --m-line: oklch(0.80 0.10 335); --m-soft: oklch(0.955 0.038 335); --m-border: oklch(0.91 0.032 335);">
+            <span style="display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;">
+              <span style="display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 11px; background: var(--m-soft); color: var(--m); flex-shrink: 0;">
+                <svg class="lu" data-a="nudge" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m10 17 5-5-5-5"></path><path d="M15 12H3"></path><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path></svg>
+              </span>
+              <span aria-hidden="true" class="mod-plus" style="display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 999px; border: 1px dashed oklch(0.82 0.07 335); background: #ffffff; color: var(--m); flex-shrink: 0;"><svg class="lu ic-plus" data-a="pop" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"></path><path d="M12 5v14"></path></svg><svg class="lu ic-check" data-a="pop" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg></span>
+            </span>
+            <span style="display: flex; flex-direction: column; gap: 6px;">
+              <span style="font-size: 16px; font-weight: 700; color: var(--fg);">Kundenportal fürs Ticketing</span>
+              <span style="font-size: 13px; line-height: 1.55; color: var(--muted);">Zugang für externe Nutzer zum eigenen Ticketstand.</span>
+            </span>
+            <span style="align-self: flex-start; margin-top: auto; padding: 3px 10px; border-radius: 999px; background: var(--m-soft); font-size: 12px; font-weight: 700; color: oklch(0.46 0.115 335);">5,00 € pro Monat</span>
+          </button>
+          <button type="button" class="mod-card hov pr-mod" data-mod="inventar" data-name="Inventar" data-price="20" aria-pressed="false" style="--m: oklch(0.52 0.13 195); --m-line: oklch(0.80 0.10 195); --m-soft: oklch(0.955 0.038 195); --m-border: oklch(0.91 0.032 195);">
+            <span style="display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;">
+              <span style="display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 11px; background: var(--m-soft); color: var(--m); flex-shrink: 0;">
+                <svg class="lu" data-a="pop" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="20" height="14" x="2" y="3" rx="2"></rect><line x1="8" x2="16" y1="21" y2="21"></line><line x1="12" x2="12" y1="17" y2="21"></line></svg>
+              </span>
+              <span aria-hidden="true" class="mod-plus" style="display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 999px; border: 1px dashed oklch(0.82 0.07 195); background: #ffffff; color: var(--m); flex-shrink: 0;"><svg class="lu ic-plus" data-a="pop" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"></path><path d="M12 5v14"></path></svg><svg class="lu ic-check" data-a="pop" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg></span>
+            </span>
+            <span style="display: flex; flex-direction: column; gap: 6px;">
+              <span style="font-size: 16px; font-weight: 700; color: var(--fg);">Inventar</span>
+              <span style="font-size: 13px; line-height: 1.55; color: var(--muted);">Geräte, Seriennummern und Gerätestatus im Überblick.</span>
+            </span>
+            <span style="align-self: flex-start; margin-top: auto; padding: 3px 10px; border-radius: 999px; background: var(--m-soft); font-size: 12px; font-weight: 700; color: oklch(0.46 0.115 195);">20,00 € pro Monat</span>
+          </button>
+          <button type="button" class="mod-card hov pr-mod" data-mod="wartung" data-name="Wartungen" data-price="20" aria-pressed="false" style="--m: oklch(0.52 0.13 165); --m-line: oklch(0.80 0.10 165); --m-soft: oklch(0.955 0.038 165); --m-border: oklch(0.91 0.032 165);">
+            <span style="display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;">
+              <span style="display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 11px; background: var(--m-soft); color: var(--m); flex-shrink: 0;">
+                <svg class="lu" data-a="spin" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915"></path><circle cx="12" cy="12" r="3"></circle></svg>
+              </span>
+              <span aria-hidden="true" class="mod-plus" style="display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 999px; border: 1px dashed oklch(0.82 0.07 165); background: #ffffff; color: var(--m); flex-shrink: 0;"><svg class="lu ic-plus" data-a="pop" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"></path><path d="M12 5v14"></path></svg><svg class="lu ic-check" data-a="pop" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg></span>
+            </span>
+            <span style="display: flex; flex-direction: column; gap: 6px;">
+              <span style="font-size: 16px; font-weight: 700; color: var(--fg);">Wartungen</span>
+              <span style="font-size: 13px; line-height: 1.55; color: var(--muted);">Wiederkehrende Aufgaben planen und verknüpfen.</span>
+            </span>
+            <span style="align-self: flex-start; margin-top: auto; padding: 3px 10px; border-radius: 999px; background: var(--m-soft); font-size: 12px; font-weight: 700; color: oklch(0.46 0.115 165);">20,00 € pro Monat</span>
+          </button>
+          <button type="button" class="mod-card hov pr-mod" data-mod="besprechung" data-name="Besprechungen" data-price="10" aria-pressed="false" style="--m: oklch(0.52 0.13 95); --m-line: oklch(0.80 0.10 95); --m-soft: oklch(0.955 0.038 95); --m-border: oklch(0.91 0.032 95);">
+            <span style="display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;">
+              <span style="display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 11px; background: var(--m-soft); color: var(--m); flex-shrink: 0;">
+                <svg class="lu" data-a="pop" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><path d="M16 3.128a4 4 0 0 1 0 7.744"></path><path d="M22 21v-2a4 4 0 0 0-3-3.87"></path><circle cx="9" cy="7" r="4"></circle></svg>
+              </span>
+              <span aria-hidden="true" class="mod-plus" style="display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 999px; border: 1px dashed oklch(0.82 0.07 95); background: #ffffff; color: var(--m); flex-shrink: 0;"><svg class="lu ic-plus" data-a="pop" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"></path><path d="M12 5v14"></path></svg><svg class="lu ic-check" data-a="pop" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg></span>
+            </span>
+            <span style="display: flex; flex-direction: column; gap: 6px;">
+              <span style="font-size: 16px; font-weight: 700; color: var(--fg);">Besprechungen</span>
+              <span style="font-size: 13px; line-height: 1.55; color: var(--muted);">Protokolle mit den Aufgaben, die daraus entstehen.</span>
+            </span>
+            <span style="align-self: flex-start; margin-top: auto; padding: 3px 10px; border-radius: 999px; background: var(--m-soft); font-size: 12px; font-weight: 700; color: oklch(0.46 0.115 95);">10,00 € pro Monat</span>
+          </button>
+          <button type="button" class="mod-card hov pr-mod" data-mod="abrechnung" data-name="Abrechnung" data-price="15" aria-pressed="false" style="--m: oklch(0.52 0.13 10); --m-line: oklch(0.80 0.10 10); --m-soft: oklch(0.955 0.038 10); --m-border: oklch(0.91 0.032 10);">
+            <span style="display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;">
+              <span style="display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 11px; background: var(--m-soft); color: var(--m); flex-shrink: 0;">
+                <svg class="lu" data-a="pop" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15.828 14.829a4 4 0 0 1-5.656 0 4 4 0 0 1 0-5.657 4 4 0 0 1 5.656 0"></path><path d="M4 3a1 1 0 0 1 1-1 1.3 1.3 0 0 1 .7.2l.933.6a1.3 1.3 0 0 0 1.4 0l.934-.6a1.3 1.3 0 0 1 1.4 0l.933.6a1.3 1.3 0 0 0 1.4 0l.933-.6a1.3 1.3 0 0 1 1.4 0l.934.6a1.3 1.3 0 0 0 1.4 0l.933-.6A1.3 1.3 0 0 1 19 2a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1 1.3 1.3 0 0 1-.7-.2l-.933-.6a1.3 1.3 0 0 0-1.4 0l-.934.6a1.3 1.3 0 0 1-1.4 0l-.933-.6a1.3 1.3 0 0 0-1.4 0l-.933.6a1.3 1.3 0 0 1-1.4 0l-.934-.6a1.3 1.3 0 0 0-1.4 0l-.933.6a1.3 1.3 0 0 1-.7.2 1 1 0 0 1-1-1z"></path><path d="M8 12h5"></path></svg>
+              </span>
+              <span aria-hidden="true" class="mod-plus" style="display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 999px; border: 1px dashed oklch(0.82 0.07 10); background: #ffffff; color: var(--m); flex-shrink: 0;"><svg class="lu ic-plus" data-a="pop" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"></path><path d="M12 5v14"></path></svg><svg class="lu ic-check" data-a="pop" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg></span>
+            </span>
+            <span style="display: flex; flex-direction: column; gap: 6px;">
+              <span style="font-size: 16px; font-weight: 700; color: var(--fg);">Abrechnung</span>
+              <span style="font-size: 13px; line-height: 1.55; color: var(--muted);">Tätigkeiten prüfen, freigeben, ans ERP übergeben.</span>
+            </span>
+            <span style="align-self: flex-start; margin-top: auto; padding: 3px 10px; border-radius: 999px; background: var(--m-soft); font-size: 12px; font-weight: 700; color: oklch(0.46 0.115 10);">15,00 € pro Monat</span>
+          </button>
+          </div>
+
+          <div style="display: flex; align-items: flex-start; gap: 14px; padding: 18px 22px; border-radius: 14px; background: var(--accent-soft); border: 1px solid #d6eca1;">
+            <span style="display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: 9px; background: var(--accent); color: #032440; flex-shrink: 0;">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg>
+            </span>
+            <p style="font-size: 14px; line-height: 1.55; color: var(--muted);"><strong style="color: var(--fg);">Eine Benutzerlizenz – Zugriff auf alle gebuchten Module.</strong> Es müssen nicht mehrere Lizenzen gekauft werden, nur weil Ihr Unternehmen mehrere Module nutzt. To-do und Adressen sind ohnehin lizenzfrei.</p>
+          </div>
+
+          </div>
+
+          <div id="pr-solo" hidden style="display: flex; align-items: flex-start; gap: 14px; padding: 18px 22px; border-radius: 14px; background: var(--brand-soft); border: 1px solid #dcf0ff;">
+            <span style="display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: 9px; background: var(--brand); color: #ffffff; flex-shrink: 0;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><path d="M12 6v6l4 2"></path></svg></span>
+            <p style="font-size: 14px; line-height: 1.55; color: var(--muted);"><strong style="color: var(--fg);">Zeiterfassung, Arbeitszeitkonto, Urlaub und Krankmeldung.</strong> Sie zahlen nur für Mitarbeiter, die Zeiten buchen – ohne Grundlizenz und ohne weitere Module.</p>
+          </div>
+
+        </div>
+
+        <aside class="pr-sum" aria-labelledby="pr-sum-title" style="position: sticky; top: 100px; display: flex; flex-direction: column; gap: 20px; padding: clamp(24px, 4vw, 30px); border-radius: 20px; background: linear-gradient(135deg, #006cb5 0%, 66%, #00497f 100%); color: #ffffff;">
+          <div style="display: flex; flex-direction: column; gap: 6px;">
+            <h3 id="pr-sum-title" style="font-size: 13px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(255,255,255,0.9);">Ihre monatlichen Kosten</h3>
+            <div style="display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap;">
+              <span id="pr-total" aria-live="polite" aria-atomic="true" style="font-size: clamp(40px, 6vw, 52px); font-weight: 700; letter-spacing: -0.03em; line-height: 1.05;">0,00 €</span>
+              <span style="font-size: 15px; color: rgba(255,255,255,0.9);">/ Monat</span>
+            </div>
+            <span id="pr-per" style="font-size: 14px; color: rgba(255,255,255,0.9);"></span>
+          </div>
+          <div style="height: 1px; background: rgba(255,255,255,0.18);"></div>
+          <div id="pr-lines" style="display: flex; flex-direction: column; gap: 10px;"></div>
+          <div style="height: 1px; background: rgba(255,255,255,0.18);"></div>
+          <p id="pr-note" style="font-size: 13px; line-height: 1.5; color: rgba(255,255,255,0.9);">Monatliche Gesamtkosten = Benutzerlizenzen + gebuchte Modullizenzen.</p>
+          <a class="btn btn-accent" href="https://outlook.office.com/book/TerminbuchungBeratungsgesprch@ctk-gmbh.de/" target="_blank" rel="noopener noreferrer" style="display: inline-flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 54px; padding: 0 12px 0 22px; border-radius: 12px; background: var(--accent); color: #032440; font-size: 16px; font-weight: 700;">
+            Angebot anfordern
+            <span class="btn-chip" style="display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 999px; background: rgba(0,0,0,0.12);">
+              <svg class="lu" data-a="nudge" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg>
+            </span>
+          </a>
+        </aside>
+
+      </div>
+    </div>
+  </section>
+
+<script>
+// PREISE: Konfigurator. Preise laut BusinessHub_Preisuebersicht.pdf.
+(function () {
+  var STAFFEL = [[25, 15], [10, 16], [5, 18], [1, 20]];   // ab n User: Preis je User und Monat
+  var ZEIT_PREIS = 2.5;                                    // je Zeiterfassungsuser
+  var MAX_USER = 500;
+  // Der Regler ist in zwei Abschnitten gestreckt, damit auch kleine Teams genau einstellbar bleiben:
+  // Position 1–100 = 1–100 User (Einerschritte), 100–200 = 100–500 User (5er-Schritte).
+  function nachUser(pos) {
+    pos = Number(pos);
+    if (pos <= 100) return Math.max(1, Math.round(pos));
+    return Math.min(MAX_USER, Math.round((100 + (pos - 100) * 4) / 5) * 5);
+  }
+  function nachPos(u) {
+    if (u <= 100) return Math.max(1, u);
+    return Math.round(100 + (u - 100) / 4);
+  }
+
+  var $ = function (id) { return document.getElementById(id); };
+  var eur = new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' });
+  var users = $('pr-users'), usersNum = $('pr-users-num');
+  var zeit = $('pr-zeit'), zeitNum = $('pr-zeit-num'), zeitRow = $('pr-zeit-row');
+  var mods = Array.prototype.slice.call(document.querySelectorAll('.pr-mod'));
+  var tiers = Array.prototype.slice.call(document.querySelectorAll('.pr-tier'));
+  if (!users || !zeit) return;
+
+  var modus = 'voll';        // 'voll' = Grundlizenz + Module, 'zeit' = nur Zeiterfassung
+  var zeitAuto = true;   // folgt der Benutzerzahl, bis jemand den Zeiterfassungs-Regler anfasst
+
+  function clamp(v, lo, hi) { v = Math.round(Number(v)); if (!isFinite(v)) v = lo; return Math.min(hi, Math.max(lo, v)); }
+  function preisJeUser(n) { for (var i = 0; i < STAFFEL.length; i++) if (n >= STAFFEL[i][0]) return STAFFEL[i][1]; return STAFFEL[STAFFEL.length - 1][1]; }
+  function fill(el) { var d = el.max - el.min; el.style.setProperty('--p', (d > 0 ? (el.value - el.min) / d * 100 : 100) + '%'); }
+  function an(mod) { return mod.classList.contains('is-on'); }
+
+  function render() {
+    var n = clamp(usersNum.value, 1, MAX_USER);
+    var jeUser = preisJeUser(n);
+    var solo = modus === 'zeit';
+    var zeitAn = !solo && an(document.querySelector('[data-mod="zeit"]'));
+    var z = clamp(zeitNum.value, 1, MAX_USER);
+    if (zeitAuto) z = n;
+
+    if (document.activeElement !== users) users.value = nachPos(n);
+    fill(users);
+    if (document.activeElement !== zeit) zeit.value = nachPos(z);
+    fill(zeit);
+    if (document.activeElement !== usersNum) usersNum.value = n;
+    if (document.activeElement !== zeitNum) zeitNum.value = z;
+    zeitRow.hidden = !zeitAn;
+
+    tiers.forEach(function (t, i) {
+      var von = Number(t.getAttribute('data-min')), bis = tiers[i + 1] ? Number(tiers[i + 1].getAttribute('data-min')) : Infinity;
+      t.classList.toggle('is-on', n >= von && n < bis);
+    });
+
+    $('pr-max-note').hidden = !(n >= MAX_USER || (zeitAn && z >= MAX_USER));
+    $('pr-voll').hidden = solo; $('pr-solo').hidden = !solo;
+    $('pr-tiers').hidden = solo; $('pr-users-hint').hidden = solo;
+    $('pr-users-label').textContent = solo ? 'Wie viele Mitarbeiter sollen Zeiten erfassen?' : 'Wie viele Mitarbeiter arbeiten im Business Hub?';
+    $('pr-users-sub').textContent = solo ? '2,50 € je Zeiterfassungsuser – ohne Grundlizenz.' : 'Grundlizenz je Benutzer – inklusive Modul Ticketing.';
+    $('pr-users-unit').textContent = solo ? 'Zeiterfassungsuser' : 'User';
+    $('pr-note').textContent = solo ? 'Monatliche Gesamtkosten = Zeiterfassungsuser × 2,50 €.' : 'Monatliche Gesamtkosten = Benutzerlizenzen + gebuchte Modullizenzen.';
+
+    var zeilen, summe;
+    if (solo) {
+      summe = n * ZEIT_PREIS;
+      zeilen = [['Zeiterfassung', n + ' × ' + eur.format(ZEIT_PREIS), summe]];
+    } else {
+      zeilen = [[ 'Grundlizenz', n + ' × ' + eur.format(jeUser) + ' · inkl. Ticketing', n * jeUser ]];
+      summe = n * jeUser;
+    }
+    mods.forEach(function (m) {
+      if (solo || m.hasAttribute('data-fixed') || !an(m)) return;
+      var p = m.getAttribute('data-price'), name = m.getAttribute('data-name'), betrag;
+      if (p.indexOf('user:') === 0) { betrag = z * ZEIT_PREIS; zeilen.push([name, z + ' × ' + eur.format(ZEIT_PREIS), betrag]); }
+      else { betrag = Number(p); zeilen.push([name, 'Pauschale', betrag]); }
+      summe += betrag;
+    });
+
+    $('pr-total').textContent = eur.format(summe);
+    $('pr-per').textContent = '≈ ' + eur.format(summe / n) + ' je Mitarbeiter und Monat';
+    $('pr-lines').innerHTML = zeilen.map(function (r) {
+      return '<div class="pr-line"><span><span style="font-weight: 700;">' + r[0] + '</span>' +
+        '<span style="display: block; font-size: 12px; color: rgba(255,255,255,0.9);">' + r[1] + '</span></span>' +
+        '<span style="font-weight: 700; white-space: nowrap;">' + eur.format(r[2]) + '</span></div>';
+    }).join('');
+  }
+
+  users.addEventListener('input', function () { usersNum.value = nachUser(users.value); render(); });
+  usersNum.addEventListener('input', function () { if (usersNum.value !== '') render(); });
+  usersNum.addEventListener('blur', function () { usersNum.value = clamp(usersNum.value, 1, MAX_USER); render(); });
+  zeit.addEventListener('input', function () { zeitAuto = false; zeitNum.value = nachUser(zeit.value); render(); });
+  zeitNum.addEventListener('input', function () { if (zeitNum.value !== '') { zeitAuto = false; render(); } });
+  zeitNum.addEventListener('blur', function () { zeitNum.value = clamp(zeitNum.value, 1, MAX_USER); render(); });
+
+  var modi = Array.prototype.slice.call(document.querySelectorAll('.pr-mode'));
+  modi.forEach(function (b) {
+    b.addEventListener('click', function () {
+      modus = b.getAttribute('data-pr-mode');
+      modi.forEach(function (x) { x.setAttribute('aria-checked', x === b ? 'true' : 'false'); });
+      render();
+    });
+  });
+
+  mods.forEach(function (m) {
+    if (m.hasAttribute('data-fixed')) return;
+    m.addEventListener('click', function () {
+      var on = !an(m);
+      m.classList.toggle('is-on', on);
+      m.setAttribute('aria-pressed', on ? 'true' : 'false');
+      render();
+    });
+  });
+
+  render();
+})();
+</script>
