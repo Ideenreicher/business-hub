@@ -50,10 +50,45 @@
       outline-offset: 3px;
       border-radius: 6px;
     }
-    .burger { display: none; }
+    /* Mobiles Menue: Icon rechts, Demo-Button im aufklappenden Menue */
+    .burger {
+      display: none; position: relative; width: 44px; height: 44px; padding: 0; margin-right: -8px;
+      border: 0; border-radius: 12px; background: transparent; color: #1e1e1e; cursor: pointer;
+      transition: background-color 0.18s ease;
+    }
+    .burger:hover { background: var(--brand-soft); }
+    .burger span {
+      position: absolute; left: 11px; width: 22px; height: 2px; border-radius: 2px; background: currentColor;
+      transition: transform 0.25s ease, opacity 0.2s ease, top 0.25s ease, width 0.25s ease;
+    }
+    .burger span:nth-child(1) { top: 15px; }
+    .burger span:nth-child(2) { top: 21px; width: 14px; }
+    .burger span:nth-child(3) { top: 27px; }
+    .burger[aria-expanded="true"] span:nth-child(1) { top: 21px; transform: rotate(45deg); }
+    .burger[aria-expanded="true"] span:nth-child(2) { opacity: 0; }
+    .burger[aria-expanded="true"] span:nth-child(3) { top: 21px; transform: rotate(-45deg); }
+    .mobile-menu { display: none; }
+    .mm-link {
+      display: flex; align-items: center; justify-content: space-between; min-height: 54px;
+      font-size: 17px; color: #1e1e1e; border-bottom: 1px solid var(--border);
+    }
+    .mm-link::after { content: "›"; font-size: 22px; color: #a4a4a4; }
+    .mm-link:hover { color: var(--brand); }
     @media (max-width: 900px) {
       .nav-links { display: none !important; }
-      .burger { display: inline-flex !important; }
+      .header-cta { display: none !important; }
+      .burger { display: inline-block; }
+      .mobile-menu {
+        display: block; position: absolute; left: 0; right: 0; top: 100%;
+        padding: 4px clamp(16px, 3vw, 32px) 20px; background: #ffffff; border-bottom: 1px solid var(--border);
+        box-shadow: 0 24px 40px -24px rgba(6, 48, 79, 0.35);
+        visibility: hidden; opacity: 0; transform: translateY(-8px);
+        transition: opacity 0.2s ease, transform 0.2s ease, visibility 0s linear 0.2s;
+      }
+      .mobile-menu.is-open { visibility: visible; opacity: 1; transform: none; transition-delay: 0s; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .burger, .burger span, .mobile-menu { transition: none; }
     }
     @media (max-width: 860px) {
       .hero-frame { margin: 0 !important; }
@@ -2389,16 +2424,42 @@
       </nav>
 
       <div style="display: flex; align-items: center; gap: 10px;">
-        <button class="burger" type="button" aria-label="Menü öffnen" style="align-items: center; justify-content: center; width: 46px; height: 46px; border-radius: 10px; border: 1px solid var(--border); background: #ffffff; cursor: pointer;">
-          <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true" style="color: #333333;"><path d="M3 6h14M3 10h14M3 14h14" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"></path></svg>
-        </button>
-        <a class="btn btn-primary" href="https://outlook.office.com/book/TerminbuchungBeratungsgesprch@ctk-gmbh.de/" target="_blank" rel="noopener noreferrer" style="display: inline-flex; align-items: center; gap: 10px; min-height: 46px; padding: 0 22px; border-radius: 10px; background: var(--brand); color: #ffffff; font-size: 14px; font-weight: 700; white-space: nowrap;">
+        <button class="burger" type="button" aria-label="Menü öffnen" aria-expanded="false" aria-controls="mobile-menu"><span></span><span></span><span></span></button>
+        <a class="btn btn-primary header-cta" href="https://outlook.office.com/book/TerminbuchungBeratungsgesprch@ctk-gmbh.de/" target="_blank" rel="noopener noreferrer" style="display: inline-flex; align-items: center; gap: 10px; min-height: 46px; padding: 0 22px; border-radius: 10px; background: var(--brand); color: #ffffff; font-size: 14px; font-weight: 700; white-space: nowrap;">
           Demo vereinbaren
           <svg class="lu" data-a="nudge" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg>
         </a>
       </div>
 
     </div>
+  
+    <nav id="mobile-menu" class="mobile-menu" aria-label="Hauptmenü">
+      <a href="#funktionen" class="mm-link">Funktionen</a>
+      <a href="#module" class="mm-link">Module</a>
+      <a href="#apps" class="mm-link">Apps &amp; Geräte</a>
+      <a href="#integrationen" class="mm-link">Integrationen</a>
+      <a href="/preise/" class="mm-link">Preise</a>
+      <div style="padding-top: 16px;"><a class="btn btn-primary" href="https://outlook.office.com/book/TerminbuchungBeratungsgesprch@ctk-gmbh.de/" target="_blank" rel="noopener noreferrer" style="width: 100%; justify-content: center; display: inline-flex; align-items: center; gap: 10px; min-height: 46px; padding: 0 22px; border-radius: 10px; background: var(--brand); color: #ffffff; font-size: 14px; font-weight: 700; white-space: nowrap;">
+          Demo vereinbaren
+          <svg class="lu" data-a="nudge" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg>
+        </a></div>
+    </nav>
+
+    <script>
+    (function () {
+      var btn = document.querySelector('.burger'), menu = document.getElementById('mobile-menu');
+      if (!btn || !menu) return;
+      function set(open) {
+        menu.classList.toggle('is-open', open);
+        btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+        btn.setAttribute('aria-label', open ? 'Menü schließen' : 'Menü öffnen');
+      }
+      btn.addEventListener('click', function () { set(!menu.classList.contains('is-open')); });
+      menu.addEventListener('click', function (e) { if (e.target.closest('a')) set(false); });
+      document.addEventListener('keydown', function (e) { if (e.key === 'Escape') set(false); });
+      window.matchMedia('(min-width: 901px)').addEventListener('change', function () { set(false); });
+    })();
+    </script>
   </header>
 
   <!-- ── HERO ────────────────────────────────────────────── -->
