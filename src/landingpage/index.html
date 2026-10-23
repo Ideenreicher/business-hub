@@ -2404,6 +2404,34 @@
  au-kf_App_Kennzahl-Kachel_hoch_4_offset_distance_0 27.0s linear -9.3s infinite,
  au-kf_App_Kennzahl-Kachel_hoch_4_opacity_0 27.0s linear -9.3s infinite;
 }
+
+    /* ── Scroll-Animationen ────────────────────────────────────────────────
+       Nur transform und opacity (laufen auf der GPU, kein Layout). Das
+       Verstecken uebernimmt das Skript am Seitenende - nur fuer Elemente
+       unterhalb des Sichtfelds, nur mit IntersectionObserver und nur ohne
+       reduzierte Bewegung. Ohne Skript bleibt alles sichtbar. Der Einstieg
+       der Hero-Sektion laeuft rein ueber CSS. */
+    .rv {
+      opacity: 0; transform: translateY(28px);
+      transition: opacity 0.7s cubic-bezier(0.22, 0.61, 0.36, 1), transform 0.7s cubic-bezier(0.22, 0.61, 0.36, 1);
+      transition-delay: var(--rv-d, 0ms);
+    }
+    .rv.rv-in { opacity: 1; transform: none; }
+    @keyframes heroIn {
+      from { opacity: 0; transform: translateY(22px); }
+      to   { opacity: 1; transform: none; }
+    }
+    header + section > div > div:first-child > div:first-child > * {
+      animation: heroIn 0.8s cubic-bezier(0.22, 0.61, 0.36, 1) both;
+    }
+    header + section > div > div:first-child > div:first-child > :nth-child(2) { animation-delay: 0.08s; }
+    header + section > div > div:first-child > div:first-child > :nth-child(3) { animation-delay: 0.16s; }
+    header + section > div > div:first-child > div:first-child > :nth-child(4) { animation-delay: 0.24s; }
+    header + section > div > div:first-child > div:last-child { animation: heroIn 1s 0.2s cubic-bezier(0.22, 0.61, 0.36, 1) both; }
+    @media (prefers-reduced-motion: reduce) {
+      .rv { opacity: 1; transform: none; transition: none; }
+      header + section > div > div:first-child > div > *, header + section > div > div:first-child > div:last-child { animation: none; }
+    }
   </style>
 </head>
 <body>
@@ -3355,6 +3383,44 @@
       });
     });
   });
+})();
+</script>
+<script>
+(function () {
+  // Scroll-Animationen: Bloecke unterhalb des Sichtfelds blenden beim Erreichen
+  // sanft ein, Karten in Gittern leicht versetzt. Jeder Block wird nach dem
+  // Einblenden nicht mehr beobachtet.
+  if (!('IntersectionObserver' in window)) return;
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  var vh = window.innerHeight, ziele = [];
+  function merke(el, d) {
+    if (el.getBoundingClientRect().top < vh * 0.92) return; // schon sichtbar
+    el.classList.add('rv');
+    if (d) el.style.setProperty('--rv-d', d + 'ms');
+    ziele.push(el);
+  }
+  document.querySelectorAll('header + section ~ section > div > *').forEach(function (block) {
+    if (/display:\s*grid/.test(block.getAttribute('style') || '')) {
+      Array.prototype.forEach.call(block.children, function (kind, i) { merke(kind, Math.min(i % 4, 3) * 90); });
+    } else {
+      merke(block, 0);
+    }
+  });
+  if (!ziele.length) return;
+  var io = new IntersectionObserver(function (eintraege) {
+    eintraege.forEach(function (e) {
+      if (!e.isIntersecting) return;
+      var el = e.target;
+      el.classList.add('rv-in');
+      io.unobserve(el);
+      // Danach wieder frei fuer Hover-Effekte (.mod-card, .hov-card).
+      setTimeout(function () {
+        el.classList.remove('rv', 'rv-in');
+        el.style.removeProperty('--rv-d');
+      }, 1100);
+    });
+  }, { rootMargin: '0px 0px -8% 0px', threshold: 0.08 });
+  ziele.forEach(function (el) { io.observe(el); });
 })();
 </script>
 </body>
